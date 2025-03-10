@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Vibe Royale - A Vibe Coded Battle Royale Game with Cursor. Join the battle, collect weapons, and be the last one standing!"
+    />
+    <meta
+      name="keywords"
+      content="vibe royale, battle royale, 3D game, multiplayer, WebRTC, cursor, shooter"
+    />
+    <meta name="author" content="Vibe Royale Team" />
+    <meta property="og:title" content="Vibe Royale" />
+    <meta
+      property="og:description"
+      content="A Vibe Coded Battle Royale Game with Cursor. Join the battle, collect weapons, and be the last one standing!"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/images/vibe-royale-preview.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vibe Royale" />
+    <meta
+      name="twitter:description"
+      content="A Vibe Coded Battle Royale Game with Cursor. Join the battle, collect weapons, and be the last one standing!"
+    />
+    <title>Vibe Royale - Battle Royale Game</title>
+    <!-- Analytics script with automatic initialization -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/@useoutline/analytics"
+      data-outline-analytics-id="OA-0ixXoyMnujIP"
+    ></script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+      #ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      #login {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        pointer-events: auto;
+        z-index: 1000; /* Ensure it's on top */
+      }
+      #loginOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 100, 0.3); /* Blue tint */
+        backdrop-filter: blur(5px); /* Blur effect */
+        z-index: 999; /* Just below the login box */
+      }
+      #stats {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+      }
+      #health {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 200px;
+        height: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 10px;
+      }
+      #healthBar {
+        width: 100%;
+        height: 100%;
+        background: #ff0000;
+        border-radius: 10px;
+        transition: width 0.3s;
+      }
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid white;
+        border-radius: 50%;
+      }
+      #zoomOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at center,
+          transparent 20%,
+          rgba(0, 0, 0, 0.8) 21%
+        );
+        display: none;
+        pointer-events: none;
+      }
+      input {
+        margin: 10px;
+        padding: 8px;
+        border-radius: 5px;
+        border: none;
+        width: 80%;
+        font-size: 16px;
+      }
+      button {
+        padding: 10px 20px;
+        background: #4caf50;
+        border: none;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-top: 10px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+    </style>
+  </head>
+  <body oncontextmenu="return false;">
+    <div id="ui">
+      <div id="loginOverlay"></div>
+      <div id="login">
+        <h2>Enter Vibe Royale</h2>
+        <input
+          type="text"
+          id="playerName"
+          placeholder="Enter your name"
+          maxlength="20"
+        />
+        <br />
+        <button id="startButton">Start Game</button>
+      </div>
+      <!-- Add respawn modal -->
+      <div id="respawnModal" style="display: none; pointer-events: auto">
+        <div
+          id="respawnOverlay"
+          style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 999;
+          "
+        ></div>
+        <div
+          style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            pointer-events: auto;
+            z-index: 1000;
+            min-width: 300px;
+          "
+        >
+          <h2 id="deathMessage">You were eliminated!</h2>
+          <p id="deathStats">Kills: 0 | Rank: #10</p>
+          <div style="margin-top: 20px">
+            <button
+              id="respawnButton"
+              style="background: #4caf50; margin-right: 10px"
+            >
+              Play Again
+            </button>
+            <button id="quitButton" style="background: #f44336">
+              Quit Game
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="stats"></div>
+      <div id="health"><div id="healthBar"></div></div>
+      <div id="crosshair"></div>
+      <div id="zoomOverlay"></div>
+    </div>
+
+    <script>
+      // Error handling
+      window.addEventListener("error", function (e) {
+        console.error("Error:", e.message);
+        document.getElementById("loginOverlay").style.display = "block";
+        document.getElementById("login").style.display = "block";
+        alert("An error occurred: " + e.message);
+      });
+
+      // Wait for the game to load
+      document.addEventListener("DOMContentLoaded", function () {
+        document
+          .getElementById("startButton")
+          .addEventListener("click", function () {
+            if (window.startGame) {
+              window.startGame();
+            } else {
+              console.error("Game not loaded yet");
+              alert("Please wait for the game to load completely");
+            }
+          });
+
+        // Allow pressing Enter to start game
+        document
+          .getElementById("playerName")
+          .addEventListener("keyup", function (event) {
+            if (event.key === "Enter") {
+              if (window.startGame) {
+                window.startGame();
+              }
+            }
+          });
+      });
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script src="/js/lib/three.js"></script>
+    <script src="/js/lib/PointerLockControls.js"></script>
+    <script src="/js/webrtc-manager.js"></script>
+    <script src="/js/ping-manager.js"></script>
+    <script src="/js/analytics.js"></script>
+    <script src="/js/game.js"></script>
+  </body>
+</html>
